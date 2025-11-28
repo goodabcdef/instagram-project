@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # 1. 메인 DB (MySQL)
+  db:
+    image: mysql:8.0
+    container_name: insta-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: instagram
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+  # 2. 캐시 DB (Redis)
+  redis:
+    image: redis:alpine
+    container_name: insta-redis
+    ports:
+      - "6379:6379"

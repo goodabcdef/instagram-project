@@ -1,0 +1,20 @@
+# 가상환경 제외
+venv/
+
+# 데이터베이스 파일 제외 (용량 큼 + 보안)
+db_data/
+
+# 테스트로 올린 사진 제외
+static/images/*
+!static/images/.gitkeep
+
+# 파이썬 임시 파일 제외
+__pycache__/
+*.pyc
+
+# 맥북이나 윈도우 찌꺼기 파일
+.DS_Store
+Thumbs.db
+
+# VS Code 설정 파일 제외
+.vscode/
