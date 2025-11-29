@@ -18,12 +18,31 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # [API 4] 게시글 작성 (사진 업로드 포함)
 # ==========================================
 @router.post("", response_model=schemas.PostResponse, status_code=status.HTTP_201_CREATED)
-def create_post(
-    content: str = Form(...),                    # 내용 (Form 데이터로 받음)
-    file: UploadFile = File(...),                # 사진 파일
-    current_user: models.User = Depends(dependencies.get_current_user), # 로그인한 사람만
+async def create_post(  # async 붙여주세요 (파일 읽기 위해)
+    content: str = Form(None),
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(dependencies.get_current_user),
     db: Session = Depends(get_db)
 ):
+    # [추가 1] 415 에러: 이미지 파일이 아니면 거절
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="이미지 파일(jpg, png 등)만 업로드 가능합니다."
+        )
+
+    # [추가 2] 413 에러: 파일 크기가 5MB 넘으면 거절
+    # (파일을 살짝 읽어서 크기 확인)
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0) # 다시 처음으로 돌려놓기
+    
+    if file_size > 5 * 1024 * 1024: # 5MB
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="파일 크기는 5MB를 넘을 수 없습니다."
+        )
+        
     # 1. 파일 이름 겹치지 않게 변경 (유저ID_시간_원래이름)
     filename = f"{current_user.id}_{file.filename}"
     file_path = f"{UPLOAD_DIR}/{filename}"
