@@ -52,3 +52,30 @@ class CommentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+# [7] 좋아요/북마크 결과 양식 (구조가 똑같음)
+# [추가] 좋아요/북마크 요청할 때 쓸 양식 (ID만 딱 받음)
+class PostIdRequest(BaseModel):
+    post_id: int
+
+class LikeResponse(BaseModel):
+    id: int
+    user_id: int
+    post_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class BookmarkResponse(BaseModel):
+    id: int
+    user_id: int
+    post_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+        
+# [추가] 게시글 수정할 때 받을 데이터 (사진은 수정 안 하고 내용만)
+class PostUpdate(BaseModel):
+    content: str

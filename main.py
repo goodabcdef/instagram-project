@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from database import engine
 import models
-from routers import users, posts, comments # <--- [1] comments 추가
+from routers import users, posts, comments, likes, bookmarks
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -12,7 +12,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(users.router)
 app.include_router(posts.router)
-app.include_router(comments.router) # <--- [2] 등록 추가
+app.include_router(comments.router)
+app.include_router(likes.router)
+app.include_router(bookmarks.router)
+
 
 @app.get("/")
 def read_root():

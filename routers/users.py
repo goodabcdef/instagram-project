@@ -1,9 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
+from fastapi.security import OAuth2PasswordRequestForm  # <--- [중요] 이 줄이 꼭 있어야 합니다!
 from sqlalchemy.orm import Session
 from database import get_db
-import schemas, crud, models
-import dependencies # 방금 만든 도구함 불러오기
+import schemas, crud, models, dependencies
+import shutil
+import os
+
+# 사진 저장 폴더 설정
+UPLOAD_DIR = "static/images"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # 라우터 별명 설정 (URL 앞에 /users가 자동으로 붙거나, 태그가 붙음)
 router = APIRouter(
@@ -35,3 +40,53 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 @router.get("/users/me", response_model=schemas.UserResponse)
 def read_users_me(current_user: models.User = Depends(dependencies.get_current_user)):
     return current_user
+
+# [추가 import] 파일 업로드 기능을 위해 필요
+from fastapi import File, UploadFile, Form
+import shutil
+import os
+
+# 사진 저장 경로 설정 (없으면 만들기)
+UPLOAD_DIR = "static/images"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# ==========================================
+# [API 15] 내 프로필 수정 (닉네임, 프사)
+# ==========================================
+@router.patch("/me", response_model=schemas.UserResponse)
+def update_profile(
+    nickname: str = Form(None),                  # 닉네임 (선택)
+    file: UploadFile = File(None),               # 프로필 사진 (선택)
+    current_user: models.User = Depends(dependencies.get_current_user),
+    db: Session = Depends(get_db)
+):
+    # 1. 닉네임 변경 요청이 있으면 수정
+    if nickname:
+        current_user.nickname = nickname
+    
+    # 2. 사진 변경 요청이 있으면 저장 후 수정
+    if file:
+        filename = f"profile_{current_user.id}_{file.filename}"
+        file_path = f"{UPLOAD_DIR}/{filename}"
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        current_user.image_url = f"/static/images/{filename}"
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+# ==========================================
+# [API 16] 회원 탈퇴
+# ==========================================
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    current_user: models.User = Depends(dependencies.get_current_user),
+    db: Session = Depends(get_db)
+):
+    # DB에서 나 자신을 삭제
+    db.delete(current_user)
+    db.commit()
+    return
