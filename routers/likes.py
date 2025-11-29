@@ -56,3 +56,17 @@ def read_my_likes(
     db: Session = Depends(get_db)
 ):
     return db.query(models.Like).filter(models.Like.user_id == current_user.id).all()
+
+# ==========================================
+# [API - 31] 특정 게시글에 좋아요 누른 사람 목록 보기
+# ==========================================
+@router.get("/post/{post_id}", response_model=list[schemas.UserResponse])
+def read_users_who_liked(
+    post_id: int,
+    db: Session = Depends(get_db)
+):
+    # 1. 해당 게시글에 달린 좋아요를 다 찾는다.
+    likes = db.query(models.Like).filter(models.Like.post_id == post_id).all()
+    
+    # 2. 좋아요 누른 사람(owner)의 정보만 뽑아서 리스트로 준다.
+    return [like.owner for like in likes]

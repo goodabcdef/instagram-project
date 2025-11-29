@@ -2,20 +2,24 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from database import engine
 import models
-from routers import users, posts, comments, likes, bookmarks
+from routers import users, posts, comments, likes, bookmarks, follows, admin, search
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="인스타그램 API", version="1.0.0")
 
+# 사진 폴더 개방
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# 라우터 등록
 app.include_router(users.router)
 app.include_router(posts.router)
 app.include_router(comments.router)
 app.include_router(likes.router)
 app.include_router(bookmarks.router)
-
+app.include_router(follows.router)
+app.include_router(admin.router)
+app.include_router(search.router)
 
 @app.get("/")
 def read_root():

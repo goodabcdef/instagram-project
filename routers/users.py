@@ -90,3 +90,12 @@ def delete_user(
     db.delete(current_user)
     db.commit()
     return
+
+# ==========================================
+# [API - 30] 로그아웃
+# ==========================================
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(current_user: models.User = Depends(dependencies.get_current_user)):
+    # 프론트엔드(앱)에서 토큰을 삭제하면 그게 바로 로그아웃입니다.
+    # 나중에 Redis를 쓴다면 여기서 해당 토큰을 블랙리스트에 추가합니다.
+    return {"message": "로그아웃 성공! 토큰을 삭제해주세요."}
