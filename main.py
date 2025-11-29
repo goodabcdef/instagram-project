@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from database import engine
 import models
-from routers import users, posts, comments, likes, bookmarks, follows, admin, search
+from routers import users, posts, comments, likes, bookmarks, follows, admin, search, auth
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -20,6 +20,7 @@ app.include_router(bookmarks.router)
 app.include_router(follows.router)
 app.include_router(admin.router)
 app.include_router(search.router)
+app.include_router(auth.router)
 
 @app.get("/")
 def read_root():

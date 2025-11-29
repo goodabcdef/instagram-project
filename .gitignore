@@ -17,4 +17,5 @@ __pycache__/
 Thumbs.db
 
 # VS Code 설정 파일 제외
-.vscode/
+.vscode/firebase_key.json
+firebase_key.json
