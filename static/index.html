@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 인스타그램</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background-color: #fafafa; }
+        .screen { display: none; }
+        .active { display: block; }
+        input, button, textarea { width: 100%; padding: 12px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; }
+        button { background-color: #0095f6; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #0081d6; }
+        .post { background: white; padding: 15px; margin-bottom: 20px; border: 1px solid #dbdbdb; border-radius: 3px; }
+        .post img { width: 100%; margin-top: 10px; }
+        .error { color: red; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="screen active">
+        <h2 style="text-align: center;">Instagram</h2>
+        <input type="email" id="email" placeholder="이메일" value="admin@naver.com">
+        <input type="password" id="password" placeholder="비밀번호" value="1234">
+        <button onclick="login()">로그인</button>
+        <p id="login-msg" class="error"></p>
+    </div>
+
+    <div id="feed-screen" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin:0;">Instagram</h2>
+            <button onclick="logout()" style="width: auto; background: #333; font-size: 12px;">로그아웃</button>
+        </div>
+
+        <div style="background: white; padding: 15px; border: 1px solid #dbdbdb; margin-bottom: 20px;">
+            <textarea id="post-content" placeholder="문구 입력..." style="resize: none;"></textarea>
+            <input type="file" id="post-file" accept="image/*">
+            <button onclick="uploadPost()">게시</button>
+        </div>
+
+        <div id="post-list"></div>
+    </div>
+
+    <script>
+        // 중요: 현재 접속한 주소 그대로 API 요청을 보냄 (터널링 자동 대응)
+        const SERVER_URL = ""; 
+        let token = localStorage.getItem("access_token");
+
+        if (token) showFeed();
+
+        async function login() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const formData = new URLSearchParams();
+            formData.append("username", email);
+            formData.append("password", password);
+
+            try {
+                const res = await fetch(`${SERVER_URL}/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    token = data.access_token;
+                    localStorage.setItem("access_token", token);
+                    showFeed();
+                } else {
+                    document.getElementById("login-msg").innerText = "로그인 실패!";
+                }
+            } catch (err) {
+                alert("서버 연결 실패");
+            }
+        }
+
+        function showFeed() {
+            document.getElementById("login-screen").classList.remove("active");
+            document.getElementById("feed-screen").classList.add("active");
+            loadPosts();
+        }
+
+        async function loadPosts() {
+            const res = await fetch(`${SERVER_URL}/posts`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            
+            if (res.status === 401) { logout(); return; }
+
+            const posts = await res.json();
+            const list = document.getElementById("post-list");
+            list.innerHTML = "";
+
+            posts.forEach(post => {
+                const html = `
+                    <div class="post">
+                        <div style="font-weight: bold; margin-bottom: 8px;">User ${post.user_id}</div>
+                        ${post.image_url ? `<img src="${post.image_url}">` : ""}
+                        <p style="margin-top: 10px;">${post.content || ""}</p>
+                        <small style="color: grey;">${post.created_at.split('T')[0]}</small>
+                    </div>
+                `;
+                list.innerHTML += html;
+            });
+        }
+
+        async function uploadPost() {
+            const content = document.getElementById("post-content").value;
+            const fileInput = document.getElementById("post-file");
+
+            if (fileInput.files.length === 0) { alert("사진 필수!"); return; }
+
+            const formData = new FormData();
+            formData.append("content", content);
+            formData.append("file", fileInput.files[0]);
+
+            const res = await fetch(`${SERVER_URL}/posts`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` },
+                body: formData
+            });
+
+            if (res.ok) {
+                document.getElementById("post-content").value = "";
+                fileInput.value = "";
+                loadPosts();
+            } else {
+                alert("업로드 실패");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("access_token");
+            location.reload();
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Response, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from database import engine
 import models
 import redis
@@ -39,7 +40,8 @@ app.include_router(auth.router)
 # ==========================================
 @app.get("/")
 def read_root():
-    return {"message": "인스타그램 서버 정상 작동 중!"}
+    # static 폴더 안에 있는 index.html 파일을 사용자에게 전송
+    return FileResponse("static/index.html")
 
 # ==========================================
 # [추가 API] 서버 상태 체크 + 방문자 카운트
